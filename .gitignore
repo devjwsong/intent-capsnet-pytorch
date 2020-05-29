@@ -127,3 +127,12 @@ dmypy.json
 
 # Pyre type checker
 .pyre/
+
+# Pycharm file
+.idea
+
+# Model directory
+saved_models
+
+# w2v file: since it is too large...
+data/cc.ko.300.vec
