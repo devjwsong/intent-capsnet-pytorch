@@ -188,7 +188,7 @@ def evaluate_zero_shot(test_loader, label_data, config, model):
     test_class_embeddings = tool.get_label_embedding(test_class_embeddings, test_label_lens)
     
     # Get unseen and seen categories similarity
-    sim = torch.from_numpy(
+    sim_ori = torch.from_numpy(
         tool.get_sim(train_class_embeddings, test_class_embeddings, config['sim_scale'])
     ).to(config['device'])  # (L, K)
 
@@ -204,7 +204,7 @@ def evaluate_zero_shot(test_loader, label_data, config, model):
             attentions, seen_logits, seen_prediction, seen_c = model(batch_x, batch_lens, is_train=False)
 
             # Get vote vector using similarities.
-            sim = torch.unsqueeze(sim, 0) # (1, L, K)
+            sim = torch.unsqueeze(sim_ori, 0) # (1, L, K)
             sim = sim.repeat([seen_prediction.shape[1], 1, 1]) # (R, L, K)
             sim = torch.unsqueeze(sim, 0) # (1, R, L, K)
             sim = sim.repeat([seen_prediction.shape[0], 1, 1, 1]) # (B, R, L, K)
@@ -216,7 +216,7 @@ def evaluate_zero_shot(test_loader, label_data, config, model):
             unseen_prediction = torch.matmul(sim, vote_vec) # (B, R, L, num_properties)
 
             # v: (B, L, num_properties), c: (B, R, L)
-            logit_shape = [unseen_prediction.shape[0], config['r'], config['uc_num']]
+            logit_shape = [unseen_prediction.shape[0], config['r'], config['test_class_num']]
             unseen_v, _, unseen_c = model.routing(unseen_prediction, logit_shape, num_dims=4, is_train=False)
 
             unseen_logits = torch.norm(unseen_v, dim=-1) # (B, L)
@@ -239,8 +239,10 @@ if __name__=='__main__':
 
     args = parser.parse_args()
 
-    assert args.model_type == ('bert_capsnet' or 'basic_capsnet' or 'w2v_capsnet'), "Please specify correct model type."
-    assert args.mode == ('seen_class' or 'zero_shot'), "Please specify correct mode."
+    print(args.mode)
+
+    assert args.model_type == 'bert_capsnet' or args.model_type == 'basic_capsnet' or args.model_type == 'w2v_capsent', "Please specify correct model type."
+    assert args.mode == 'seen_class' or args.mode == 'zero_shot', "Please specify correct mode."
 
     ckpt_dir = f"../saved_models/{args.model_type}/{args.mode}"
 

@@ -150,7 +150,7 @@ def read_datasets(data_path, model_type):
     w2v = None
     bert_config = None
     max_len = 50
-    if model_type == 'bert_capsnet' or 'basic_capsnet':
+    if model_type == 'bert_capsnet' or model_type == 'basic_capsnet':
         print("Loading KoBertTokenizer...")
         tokenizer = get_tokenizer()
         if model_type == 'bert_capsnet':
