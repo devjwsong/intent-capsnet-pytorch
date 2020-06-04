@@ -33,7 +33,7 @@ And this Pytorch implementation is revised and upgraded version of the original 
 
 <br/>
 
----
+<hr style="background: transparent; border: 0.5px dashed;"/>
 
 ### How to run
 
