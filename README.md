@@ -25,6 +25,8 @@ And this Pytorch implementation is revised and upgraded version of the original 
    | **Tokenizer** | KoBERT Tokenizer       | KoBERT Tokenizer     | WhiteSpace      |
    | **Embedding** | DistilKoBERT Embedding | Pytorch nn.Embedding | Korean Word2Vec |
 
+   <br/>
+
 2. In addition to zero shot intent detection task, you can train & test the model in original seen intent classification task.
 
    All you need to do is just to specify the mode option.
