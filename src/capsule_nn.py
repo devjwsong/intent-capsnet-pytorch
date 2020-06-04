@@ -14,18 +14,20 @@ class CapsuleNetwork(nn.Module):
         super(CapsuleNetwork, self).__init__()
 
         # Seed fixing
-        np.random.seed(1)
-        torch.manual_seed(1)
-        torch.cuda.manual_seed_all(1)
-        random.seed(1)
+        np.random.seed(777)
+        torch.manual_seed(777)
+        torch.cuda.manual_seed_all(777)
+        random.seed(777)
 
         self.config = config
 
         # The embedding layer and encoder can be different according to the model type.
         self.embedding = None
         self.encoder = None
+        output_size = 0
         if self.config['model_type'] == 'bert_capsnet':
             self.encoder = get_distilkobert_model()
+            output_size = self.config['hidden_size']
 
             # BERT's embedding layer might be frozen in some cases.
             if self.config['bert_embedding_frozen']:
@@ -36,21 +38,22 @@ class CapsuleNetwork(nn.Module):
             self.encoder = self.bilstm = nn.LSTM(self.config['word_emb_size'], self.config['hidden_size'],
                                                  self.config['num_layers'], bidirectional=True, batch_first=True)
             self.embedding = self.embedding = nn.Embedding(config['vocab_size'], config['word_emb_size'])
+            output_size = self.config['hidden_size'] * 2
 
             # Load pre-treind w2v model.
             if self.config['model_type'] == 'w2v_capsnet':
-                self.embedding = self.embedding.from_pretrained(torch.from_numpy(self.config['w2v'])).to(self.config['device'])
+                self.embedding = self.embedding.from_pretrained(torch.from_numpy(self.config['embedding'])).to(self.config['device'])
 
         self.drop = nn.Dropout(config['keep_prob'])
 
         # Parameters for self attention.
-        self.ws1 = nn.Linear(self.config['hidden_size'], self.config['d_a'], bias=False)
+        self.ws1 = nn.Linear(output_size, self.config['d_a'], bias=False)
         self.ws2 = nn.Linear(self.config['d_a'], self.config['r'], bias=False)
         self.tanh = nn.Tanh()
         self.softmax = nn.Softmax()
 
         # Parameters for linear transformation before DetectCaps.
-        self.capsule_weights = nn.Parameter(torch.zeros((self.config['r'], self.config['hidden_size'],
+        self.capsule_weights = nn.Parameter(torch.zeros((self.config['r'], output_size,
                                                          self.config['train_class_num'] * self.config['caps_prop'])))
 
         # Initialize parameters.
@@ -87,8 +90,8 @@ class CapsuleNetwork(nn.Module):
             packed_input = pack_padded_sequence(embedded_input, lens)
 
             # Initialize hidden states.
-            h_0 = torch.zeros(self.num_layers * 2, embedded_input.shape[1], self.config['hidden_size']).to(self.config['device'])
-            c_0 = torch.zeros(self.num_layers * 2, embedded_input.shape[1], self.config['hidden_size']).to(self.config['device'])
+            h_0 = torch.zeros(self.config['num_layers'] * 2, embedded_input.shape[1], self.config['hidden_size']).to(self.config['device'])
+            c_0 = torch.zeros(self.config['num_layers'] * 2, embedded_input.shape[1], self.config['hidden_size']).to(self.config['device'])
 
             output = self.bilstm(packed_input, (h_0, c_0))[0] # (L, B, D_H)
             output = pad_packed_sequence(output)[0].transpose(0, 1).contiguous() # (B, L, D_H)

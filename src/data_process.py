@@ -20,7 +20,7 @@ def process_label(classes, tokenizer, w2v, pad_id):
         # bert_capsnet & basic_capsent use KoBERT Tokenizer and w2v_capsnet uses whitespace tokenizer.
         if tokenizer is None:
             label = class_name.split(' ')
-            label = [w2v.vocab[w] for w in label if w in w2v.vocab]
+            label = [w2v.vocab[w].index for w in label if w in w2v.vocab]
         else:
             label = tokenizer.tokenize(class_name)
             label = tokenizer.convert_tokens_to_ids(label)
@@ -61,7 +61,7 @@ def processing(lines, tokenizer, w2v, max_len, pad_id):
         # bert_capsnet & basic_capsent use KoBERT Tokenizer and w2v_capsnet uses whitespace tokenizer.
         if tokenizer is None:
             x_arr_tok = arr[1].split(' ')
-            x_arr = [w2v.vocab[w] for w in x_arr_tok if w in w2v.vocab]
+            x_arr = [w2v.vocab[w].index for w in x_arr_tok if w in w2v.vocab]
         else:
             x_arr = tokenizer.tokenize('[CLS] ' + arr[1] + ' [SEP]')
             x_arr = tokenizer.convert_tokens_to_ids(x_arr)
@@ -109,8 +109,12 @@ def encode_label(data_y):
 
 class CustomDataset(Dataset):
     def __init__(self, file_path, tokenizer, w2v, max_len, pad_id):
-        with open(file_path, 'r', encoding='utf-8') as f:
-            lines = f.readlines()
+        if w2v is None:
+            with open(file_path, 'r', encoding='utf-8') as f:
+                lines = f.readlines()
+        else:
+            with open(file_path, 'r', encoding='ISO-8859-1') as f:
+                lines = f.readlines()
 
         print(f"Processing {file_path}...")
         self.x, self.y, self.lens, self.class_dict = processing(lines, tokenizer, w2v, max_len, pad_id)
@@ -158,9 +162,8 @@ def read_datasets(data_path, model_type):
             max_len = bert_config.max_position_embeddings
 
     else:
-        w2v_path = '..data/cc.ko.300.vec'
+        w2v_path = '../data/cc.ko.300.vec'
         w2v = load_w2v(w2v_path)
-        w2v = tool.norm_matrix(w2v.syn0)
 
     # Keep the index of padding.
     if tokenizer is None:
@@ -194,15 +197,15 @@ def read_datasets(data_path, model_type):
     if model_type == 'bert_capsnet':
         data['vocab_size'] = len(tokenizer.token2idx)
         data['word_emb_size'] = bert_config.dim
-        data['w2v'] = None
+        data['embedding'] = None
     elif model_type == 'basic_capsnet':
         data['vocab_size'] = len(tokenizer.token2idx)
         data['word_emb_size'] = 300
-        data['w2v'] = None
+        data['embedding'] = None
     elif model_type == 'w2v_capsnet':
         w2v_shape = w2v.wv.vectors.shape
         data['vocab_size'] = w2v_shape[0]
-        data['word_emb_size'] = w2v.shape[1]
-        data['w2v'] = w2v
+        data['word_emb_size'] = w2v_shape[1]
+        data['embedding'] = tool.norm_matrix(w2v.syn0)
 
     return data

@@ -38,7 +38,7 @@ def setting(model_type, ckpt_dir, mode, bert_embedding_frozen):
               'train_class_num': train_class_num,
               'test_class_num': test_class_num,
               'word_emb_size': data['word_emb_size'],
-              'd_a': 20,
+              'd_a': 80,
               'd_m': 256,
               'caps_prop': 10,
               'r': 3,
@@ -47,7 +47,7 @@ def setting(model_type, ckpt_dir, mode, bert_embedding_frozen):
               'learning_rate': 0.0001,
               'sim_scale': 4,
               'num_layers': 2,
-              'w2v': data['w2v'],
+              'embedding': data['embedding'],
               'ckpt_dir': ckpt_dir,
               'device': torch.device('cuda') if torch.cuda.is_available() else torch.device('cpu'),
               'model_type': model_type,
@@ -90,6 +90,7 @@ def train(config, label_data, train_loader, test_loader):
         start_time = time.time()
         for batch in tqdm(train_loader):
             batch_x, batch_y, batch_lens, batch_one_hot_label = batch
+            batch_x, batch_y, batch_lens, batch_one_hot_label = sort_batch(batch_x, batch_y, batch_lens, batch_one_hot_label)
 
             attentions, output_logits, prediction_vecs, _ = model(batch_x, batch_lens, is_train=True)
             loss_val = model.get_loss(batch_one_hot_label, output_logits, attentions)
@@ -154,6 +155,8 @@ def evaluate_seen_class(test_loader, model):
         # One batch.
         for batch in tqdm(test_loader):
             batch_x, batch_y, batch_lens, batch_one_hot_label = batch
+            batch_x, batch_y, batch_lens, batch_one_hot_label = sort_batch(batch_x, batch_y, batch_lens,
+                                                                           batch_one_hot_label)
 
             attentions, output_logits, prediction_vecs, _ = model(batch_x, batch_lens, is_train=False)
 
@@ -199,6 +202,8 @@ def evaluate_zero_shot(test_loader, label_data, config, model):
         start_time = time.time()
         for batch in tqdm(test_loader):
             batch_x, batch_y, batch_lens, batch_one_hot_label = batch
+            batch_x, batch_y, batch_lens, batch_one_hot_label = sort_batch(batch_x, batch_y, batch_lens,
+                                                                           batch_one_hot_label)
 
             # attention: A (B, R, L), seen_logits: logits from v (B, num_properties), seen_prediction: p (B, R, K, num_properties), seen_c: c (B, R, K)
             attentions, seen_logits, seen_prediction, seen_c = model(batch_x, batch_lens, is_train=False)
@@ -231,6 +236,15 @@ def evaluate_zero_shot(test_loader, label_data, config, model):
     return acc, f1, test_time
 
 
+def sort_batch(batch_x, batch_y, batch_lens, batch_one_hot_label):
+    batch_lens_sorted, sorted_idx = batch_lens.sort(0, descending=True)
+    batch_x_sorted = batch_x[sorted_idx]
+    batch_y_sorted = batch_y[sorted_idx]
+    batch_one_hot_label_sorted = batch_one_hot_label[sorted_idx]
+
+    return batch_x_sorted, batch_y_sorted, batch_lens_sorted, batch_one_hot_label_sorted
+
+
 if __name__=='__main__':
     parser = argparse.ArgumentParser(description="Argument parser for various parameters.")
     parser.add_argument('--model_type', type=str, required=True, help="The model type for training & testing")
@@ -241,7 +255,7 @@ if __name__=='__main__':
 
     print(args.mode)
 
-    assert args.model_type == 'bert_capsnet' or args.model_type == 'basic_capsnet' or args.model_type == 'w2v_capsent', "Please specify correct model type."
+    assert args.model_type == 'bert_capsnet' or args.model_type == 'basic_capsnet' or args.model_type == 'w2v_capsnet', "Please specify correct model type."
     assert args.mode == 'seen_class' or args.mode == 'zero_shot', "Please specify correct mode."
 
     ckpt_dir = f"../saved_models/{args.model_type}/{args.mode}"
