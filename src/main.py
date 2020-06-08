@@ -14,6 +14,7 @@ def setting(model_type, ckpt_dir, mode, bert_embedding_frozen):
     # Load data dict.
     print("Reading dataset...")
     data_path = f"../data/{mode}"
+
     data = data_process.read_datasets(data_path, model_type)
 
     train_class_num = len(data['train_class_dict'])
@@ -30,7 +31,7 @@ def setting(model_type, ckpt_dir, mode, bert_embedding_frozen):
     # Set basic configs for training.
     config = {'keep_prob': 0.8,
               'hidden_size': data['word_emb_size'] if model_type == 'bert_capsnet' else 768,
-              'batch_size': 16,
+              'batch_size': 8,
               'vocab_size': data['vocab_size'],
               'epoch_num': 200,
               'seq_len': data['max_len'],

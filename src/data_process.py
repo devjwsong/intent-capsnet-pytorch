@@ -7,6 +7,8 @@ from tqdm import tqdm
 import numpy as np
 import torch
 import tool
+import os
+import urllib.request
 
 
 def process_label(classes, tokenizer, w2v, pad_id):
@@ -162,7 +164,12 @@ def read_datasets(data_path, model_type):
             max_len = bert_config.max_position_embeddings
 
     else:
-        w2v_path = '../data/cc.ko.300.vec'
+        w2v_path = f'{data_path}/cc.ko.300.vec'
+        if not os.path.isfile(w2v_path):
+            print("There is no Korean w2v file.")
+            print(f"Please download w2v file from https://dl.fbaipublicfiles.com/fasttext/vectors-crawl/cc.ko.300.bin.gz,"
+                  f" extract it and put it in {data_path}.")
+            exit()
         w2v = load_w2v(w2v_path)
 
     # Keep the index of padding.
