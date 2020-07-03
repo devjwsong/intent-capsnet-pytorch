@@ -53,7 +53,9 @@ And this Pytorch implementation is revised and upgraded version of the original 
 
    - `--model_type`: You should select one model type among three, `bert_capsnet`, `basic_capsnet`, `w2v_capsnet`.
    - `--mode`: You should choose one of two tasks, `seen_class` or `zero_shot`.
-   - `--bert_embedding_frozen`: This matters when you use `bert_capsnet`, which specify whether the embedding layer of DistilKoBERT should be frozen or not. This parameter is `True` or `False` and if you omit this, it is fixed in `False`.
+   - `--bert_embedding_frozen`: This matters when you use `bert_capsnet`, which specifies whether the embedding layer of DistilKoBERT should be frozen or not. This parameter is `True` or `False` and if you omit this, it is fixed to `False`.
+   
+   <br/>
 
-<br/>
+---
 
