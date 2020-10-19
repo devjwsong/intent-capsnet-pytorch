@@ -65,7 +65,7 @@ And this Pytorch implementation is revised and upgraded version of the original 
 *Xia, C., Zhang, C., Yan, X., Chang, Y., & Yu, P. S. (2018). Zero-shot user intent detection via capsule neural networks. arXiv preprint arXiv:1809.00385*. ([https://arxiv.org/abs/1809.00385](https://arxiv.org/abs/1809.00385))
 
 <a id="2">[2]</a> 
-*Zero-shot User Intent Detection via Capsule Neural Networks (PyTorch Implementation)*. [https://github.com/nhhoang96/ZeroShotCapsule-PyTorch-](https://github.com/nhhoang96/ZeroShotCapsule-PyTorch-)
+*Zero-shot User Intent Detection via Capsule Neural Networks (PyTorch Implementation)*. ([https://github.com/nhhoang96/ZeroShotCapsule-PyTorch-](https://github.com/nhhoang96/ZeroShotCapsule-PyTorch-))
 
 ---
 
