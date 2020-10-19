@@ -67,5 +67,7 @@ And this Pytorch implementation is revised and upgraded version of the original 
 <a id="2">[2]</a> 
 *Zero-shot User Intent Detection via Capsule Neural Networks (PyTorch Implementation)*. ([https://github.com/nhhoang96/ZeroShotCapsule-PyTorch-](https://github.com/nhhoang96/ZeroShotCapsule-PyTorch-))
 
+<br/>
+
 ---
 
