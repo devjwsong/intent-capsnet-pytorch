@@ -5,7 +5,7 @@ This repository is Pytorch implementation of **"Zero-shot User Intent Detection 
 
 Details of this model is available in the original paper, [*Xia, C., Zhang, C., Yan, X., Chang, Y., & Yu, P. S. (2018). Zero-shot user intent detection via capsule neural networks. arXiv preprint arXiv:1809.00385*](https://arxiv.org/abs/1809.00385).
 
-And this Pytorch implementation is revised and upgraded version of the original repository, [*Zero-shot User Intent Detection via Capsule Neural Networks (PyTorch Implementation)*](https://github.com/nhhoang96/ZeroShotCapsule-PyTorch-).
+And this Pytorch implementation is revised and upgraded version of the original repository, "*Zero-shot User Intent Detection via Capsule Neural Networks (PyTorch Implementation)*"[[2]](#2).
 
 <br/>
 
@@ -56,6 +56,16 @@ And this Pytorch implementation is revised and upgraded version of the original 
    - `--bert_embedding_frozen`: This matters when you use `bert_capsnet`, which specifies whether the embedding layer of DistilKoBERT should be frozen or not. This parameter is `True` or `False` and if you omit this, it is fixed to `False`.
    
    <br/>
+
+<hr style="background: transparent; border: 0.5px dashed;"/>
+
+### References
+
+<a id="1">[1]</a> 
+[*Xia, C., Zhang, C., Yan, X., Chang, Y., & Yu, P. S. (2018). Zero-shot user intent detection via capsule neural networks. arXiv preprint arXiv:1809.00385*](https://arxiv.org/abs/1809.00385).
+
+<a id="1">[1]</a> 
+[*Zero-shot User Intent Detection via Capsule Neural Networks (PyTorch Implementation)*](https://github.com/nhhoang96/ZeroShotCapsule-PyTorch-).
 
 ---
 
