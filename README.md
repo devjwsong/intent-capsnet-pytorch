@@ -1,11 +1,13 @@
 # intent-capsnet-kor-pytorch
 This repository is Pytorch implementation of **"Zero-shot User Intent Detection via Capsule Neural Networks"**, especially for Korean.
 
-
-
 Details of this model is available in the original paper, "*Zero-shot user intent detection via capsule neural networks*"[[1]](#1).
 
 And this Pytorch implementation is revised and upgraded version of the original repository, "*Zero-shot User Intent Detection via Capsule Neural Networks (PyTorch Implementation)*"[[2]](#2).
+
+The details of the model structure are as follows.
+
+<img src="https://user-images.githubusercontent.com/16731987/103389488-81ae0900-4b52-11eb-8220-299d873b5934.PNG" alt="The description of the IntentCapsNet structure."/>
 
 <br/>
 
@@ -53,7 +55,7 @@ And this Pytorch implementation is revised and upgraded version of the original 
 
    - `--model_type`: You should select one model type among three, `bert_capsnet`, `basic_capsnet`, `w2v_capsnet`.
    - `--mode`: You should choose one of two tasks, `seen_class` or `zero_shot`.
-   - `--bert_embedding_frozen`: This matters when you use `bert_capsnet`, which specifies whether the embedding layer of DistilKoBERT should be frozen or not. This parameter is `True` or `False` and if you omit this, it is fixed to `False`.
+   - `--bert_embedding_frozen`: This matters when you use `bert_capsnet`, which specifies whether the embedding layer of DistilKoBERT should be frozen or not. This parameter is `True` or `False`. (default: `False`)
    
    <br/>
 
