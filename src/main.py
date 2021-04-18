@@ -33,7 +33,7 @@ def setting(args):
     }
     
     args.hidden_size = args.word_emb_size if args.model_type == 'bert_capsnet' else 768
-    args.device = torch.device(f'cuda: {args.gpu}') if torch.cuda.is_available() else torch.device('cpu')
+    args.device = torch.device(f'cuda:{args.gpu}') if torch.cuda.is_available() else torch.device('cpu')
 
     # Initialize dataloaders.
     random.seed(args.seed)
@@ -73,6 +73,7 @@ def train(args, label_data, train_loader, valid_loader):
         for batch in tqdm(train_loader):
             batch_x, batch_y, batch_lens, batch_one_hot_label = batch
             batch_x, batch_y, batch_lens, batch_one_hot_label = sort_batch(batch_x, batch_y, batch_lens, batch_one_hot_label)
+            batch_x = batch_x.to(args.device)
 
             attentions, output_logits, prediction_vecs, _ = model(batch_x, batch_lens, is_train=True)
             loss_val = model.get_loss(batch_one_hot_label, output_logits, attentions)
@@ -110,7 +111,7 @@ def train(args, label_data, train_loader, valid_loader):
         # If f1 score has increased, save the model.
         if cur_valid_acc > best_valid_acc:
             best_valid_acc = cur_valid_acc
-            torch.save(model.state_dict(), f"{args.ckpt_dir}/best_model.ckpt")
+            torch.save(model.state_dict(), f"{args.ckpt_dir}/best_model_{round(acc, 4)}_{round(cur_valid_acc, 4)}.ckpt")
             print("************ Best model saved! ************")
 
         print("------------------------------------------------------")
@@ -138,6 +139,7 @@ def evaluate_seen_class(valid_loader, model):
             batch_x, batch_y, batch_lens, batch_one_hot_label = batch
             batch_x, batch_y, batch_lens, batch_one_hot_label = sort_batch(batch_x, batch_y, batch_lens,
                                                                            batch_one_hot_label)
+            batch_x = batch_x.to(args.device)
 
             attentions, output_logits, prediction_vecs, _ = model(batch_x, batch_lens, is_train=False)
 
@@ -184,6 +186,7 @@ def evaluate_zero_shot(args, valid_loader, label_data, model):
             batch_x, batch_y, batch_lens, batch_one_hot_label = batch
             batch_x, batch_y, batch_lens, batch_one_hot_label = sort_batch(batch_x, batch_y, batch_lens,
                                                                            batch_one_hot_label)
+            batch_x = batch_x.to(args.device)
 
             # attention: A (B, R, L), seen_logits: logits from v (B, num_properties), seen_prediction: p (B, R, K, num_properties), seen_c: c (B, R, K)
             attentions, seen_logits, seen_prediction, seen_c = model(batch_x, batch_lens, is_train=False)
@@ -228,12 +231,12 @@ def sort_batch(batch_x, batch_y, batch_lens, batch_one_hot_label):
 if __name__=='__main__':
     parser = argparse.ArgumentParser(description="Argument parser for various parameters.")
     parser.add_argument('--seed', type=int, required=True, default=0, help="The random seed.")
-    parser.add_argument('--batch_size', type=int, required=True, default=1, help="The batch size.")
+    parser.add_argument('--batch_size', type=int, required=True, default=16, help="The batch size.")
     parser.add_argument('--learning_rate', type=float, required=True, default=1e-4, help="The learning rate.")
-    parser.add_argument('--num_epochs', type=int, required=True, default=1, help="The total number of epochs.")
+    parser.add_argument('--num_epochs', type=int, required=True, default=10, help="The total number of epochs.")
     parser.add_argument('--max_len', type=int, required=True, default=128, help="The maximum input length.")
     parser.add_argument('--dropout', type=float, required=True, default=0.0, help="The dropout rate.")
-    parser.add_argument('--d_a', type=int, required=True, default=20, help="The dimension size of internal vector during self-attention.")
+    parser.add_argument('--d_a', type=int, required=True, default=80, help="The dimension size of internal vector during self-attention.")
     parser.add_argument('--num_props', type=int, required=True, default=10, help="The number of properties in each capsule.")
     parser.add_argument('--r', type=int, required=True, default=3, help="The number of semantic features.")
     parser.add_argument('--num_iters', type=int, required=True, default=1, help="The number of iterations for the dynamic routing algorithm.")
@@ -246,8 +249,8 @@ if __name__=='__main__':
     parser.add_argument('--train_frac', type=float, default=0.8, help="The ratio of the conversations to be included in the train set.")
     parser.add_argument('--train_prefix', type=str, default="train", help="The train data file name's prefix.")
     parser.add_argument('--valid_prefix', type=str, default="valid", help="The validation data file name's prefix.")
-    parser.add_argument('--model_type', type=str, required=True, help="The model type for training & evaluation.")
-    parser.add_argument('--mode', type=str, required=True, help="seen class or zero shot?")
+    parser.add_argument('--model_type', type=str, default="bert_capsnet", required=True, help="The model type for training & evaluation.")
+    parser.add_argument('--mode', type=str, default="seen_class", required=True, help="Seen class or zero shot?")
     parser.add_argument('--bert_embedding_frozen', type=str, default="False", help="Do you want to freeze BERT's embedding layer or not?")
     parser.add_argument('--gpu', type=str, default="0", help="The index of gpu to use.")
 

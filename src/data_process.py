@@ -137,7 +137,7 @@ def load_w2v(file_path):
     return w2v
 
 
-def split_data(from_data_dir, to_data_dir, args):
+def split_seen_class_data(from_data_dir, to_data_dir, args):
     train_lines = []
     valid_lines = []
     
@@ -166,11 +166,57 @@ def split_data(from_data_dir, to_data_dir, args):
     return train_data_path, valid_data_path
 
 
+def split_zero_shot_data(from_data_dir, to_data_dir, args):
+    train_lines = []
+    valid_lines = []
+    
+    intent2list = {}
+    
+    file_list = [file for file in os.listdir(from_data_dir) if file.endswith('.txt')]
+    for file in tqdm(file_list):
+        intent = file.replace(".txt", "")
+        with open(f"{from_data_dir}/{file}", 'r') as f:
+            lines = f.readlines()
+        
+        intent2list[intent] = lines
+    
+    keys = list(intent2list.keys())
+    random.seed(args.seed)
+    random.shuffle(keys)
+    
+    train_intents = keys[:int(len(keys)*args.train_frac)]
+    valid_intents = keys[int(len(keys)*args.train_frac):]
+    
+    train_lines = []
+    valid_lines = []
+    for train_intent in train_intents:
+        train_lines += intent2list[train_intent]
+    for valid_intent in valid_intents:
+        valid_lines += intent2list[valid_intent]
+        
+    print(f"The size of train set: {len(train_lines)}")
+    print(f"The size of valid set: {len(valid_lines)}")
+    
+    train_data_path = f"{to_data_dir}/{args.train_prefix}.txt"
+    valid_data_path = f"{to_data_dir}/{args.valid_prefix}.txt"
+    with open(train_data_path, 'w') as f:
+        for line in tqdm(train_lines):
+            f.write(f"{line.strip()}\n")
+    with open(valid_data_path, 'w') as f:
+        for line in tqdm(valid_lines):
+            f.write(f"{line.strip()}\n")
+            
+    return train_data_path, valid_data_path
+        
+
 def read_datasets(from_data_dir, to_data_dir, args):
     # Read datasets and make the data dictionary containing essential data objects for training.
     print("Splitting raw data and saving into txt files...") 
-    train_data_path, valid_data_path = split_data(from_data_dir, to_data_dir, args)
-
+    if args.mode == 'seen_class':
+        train_data_path, valid_data_path = split_seen_class_data(from_data_dir, to_data_dir, args)
+    else:
+        train_data_path, valid_data_path = split_zero_shot_data(from_data_dir, to_data_dir, args)
+        
     # Setting configurations.
     tokenizer = None
     w2v = None
@@ -182,7 +228,7 @@ def read_datasets(from_data_dir, to_data_dir, args):
             bert_config = BertConfig.from_pretrained("bert-base-uncased")
             args.max_len = min(args.max_len, bert_config.max_position_embeddings)
     else:
-        w2v_path = f'{data_dir}/GoogleNews-vectors-negative300.bin'
+        w2v_path = f'{args.data_dir}/GoogleNews-vectors-negative300.bin'
         assert os.path.isfile(w2v_path), f"There is no Korean w2v file. Please download w2v file from https://drive.google.com/file/d/0B7XkCwpI5KDYNlNUTTlSS21pQmM/edit, extract it and put it in {args.data_dir}."
   
         w2v = load_w2v(w2v_path)
