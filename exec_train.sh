@@ -1,0 +1,24 @@
+python src/main.py \
+    --seed=0 \
+    --batch_size=16 \
+    --learning_rate=1e-4 \
+    --num_epochs=200 \
+    --max_len=128 \
+    --dropout=0.2 \
+    --d_a=80 \
+    --num_props=10 \
+    --r=3 \
+    --num_iters=3 \
+    --alpha=1e-4 \
+    --sim_scale=4 \
+    --num_layers=2 \
+    --ckpt_dir="saved_models" \
+    --data_dir="data" \
+    --raw_dir="raw" \
+    --train_frac=0.8 \
+    --train_prefix="train" \
+    --valid_prefix="valid" \
+    --model_type="bert_capsnet" \
+    --mode="seen_class" \
+    --bert_embedding_frozen="False" \
+    --gpu="0"

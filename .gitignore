@@ -135,4 +135,8 @@ dmypy.json
 saved_models
 
 # w2v file: since it is too large...
-data/cc.ko.300.vec
+*.bin
+
+# Jupyter files
+*.ipynb
+nohup.out

@@ -1,5 +1,4 @@
-from kobert_transformers import get_distilkobert_model
-from kobert_transformers import get_tokenizer
+from transformers import BertTokenizer, BertConfig
 from gensim.models.keyedvectors import KeyedVectors
 from torch.utils.data import Dataset
 from tqdm import tqdm
@@ -9,6 +8,26 @@ import torch
 import tool
 import os
 import urllib.request
+import random
+
+
+class CustomDataset(Dataset):
+    def __init__(self, file_path, tokenizer, w2v, max_len, pad_id):
+        print(f"Processing {file_path}...")
+        with open(file_path, 'r') as f:
+            lines = f.readlines()
+        self.x, self.y, self.lens, self.class_dict = process_texts(lines, tokenizer, w2v, max_len, pad_id)
+
+        self.one_hot_labels = encode_label(self.y)
+
+        classes = [k for k, v in self.class_dict.items()]
+        self.label_idxs, self.label_lens = process_label(classes, tokenizer, w2v, pad_id)
+
+    def __len__(self):
+        return self.x.shape[0]
+
+    def __getitem__(self, idx):
+        return self.x[idx], self.y[idx], self.lens[idx], self.one_hot_labels[idx]
 
 
 def process_label(classes, tokenizer, w2v, pad_id):
@@ -43,10 +62,8 @@ def process_label(classes, tokenizer, w2v, pad_id):
     return torch.LongTensor(label_idxs), lens  # (num_intents, max_len)
 
 
-def processing(lines, tokenizer, w2v, max_len, pad_id):
+def process_texts(lines, tokenizer, w2v, max_len, pad_id):
     # Read dataset, tokenize each sentences, and extract classes in it.
-
-    not_padded_x = []
     x = []
     y = []
     lens = []
@@ -54,165 +71,146 @@ def processing(lines, tokenizer, w2v, max_len, pad_id):
 
     # Process raw data
     for i, line in enumerate(tqdm(lines)):
-        arr = line.strip().split('\t')
+        label = line.strip().split('\t')[0]
+        text = line.strip().split('\t')[1]
 
-        # Since each word in labels is separated in _, we should split them first.
-        class_words = [w for w in arr[0].split('_')]
+        # Split the labels first.
+        class_words = []
+        word = ""
+        for c, char in enumerate(label):
+            word += char
+            if c == len(label)-1 or label[c+1].isupper():
+                class_words.append(word.lower())
+                word = ""
         class_name = ' '.join(class_words)
 
-        # bert_capsnet & basic_capsent use KoBERT Tokenizer and w2v_capsnet uses whitespace tokenizer.
+        # bert_capsnet & basic_capsent use BERT Tokenizer and w2v_capsnet uses whitespace tokenizer.
         if tokenizer is None:
-            x_arr_tok = arr[1].split(' ')
-            x_arr = [w2v.vocab[w].index for w in x_arr_tok if w in w2v.vocab]
+            x_tokens = text.split(' ')
+            x_token_ids = [w2v.vocab[w].index for w in x_tokens if w in w2v.vocab]
         else:
-            x_arr = tokenizer.tokenize('[CLS] ' + arr[1] + ' [SEP]')
-            x_arr = tokenizer.convert_tokens_to_ids(x_arr)
+            x_tokens = tokenizer.tokenize('[CLS] ' + text + ' [SEP]')
+            x_token_ids = tokenizer.convert_tokens_to_ids(x_tokens)
 
-        x_len = len(x_arr)
+        seq_len = len(x_token_ids)
 
-        if x_len <= 1:
+        if seq_len <= 1:
             continue
-
-        not_padded_x.append(x_arr)
+            
+        # Padding or truncating
+        if seq_len <= max_len:
+            x_token_ids += [pad_id] * (max_len-seq_len)
+        else:
+            x_token_ids = x_token_ids[:max_len]
+            
+        x.append(x_token_ids)
 
         # Note class dictionary.
         if class_name not in class_dict:
             class_dict[class_name] = len(class_dict)
         y.append(class_dict[class_name])
-        lens.append(x_len)
-
-    # Add paddings
-    for i, text in enumerate(not_padded_x):
-        if max_len < lens[i]:
-            x.append(not_padded_x[i][0:max_len])
-            lens[i] = max_len
-        else:
-            temp = not_padded_x[i] + [pad_id] * (max_len - lens[i])
-            x.append(temp)
+        lens.append(seq_len)
 
     return torch.LongTensor(x), torch.LongTensor(y), torch.LongTensor(lens), class_dict
 
 
-def encode_label(data_y):
+def encode_label(y):
     # Make one-hot encoded label vectors for calculating margin losses.
 
-    sample_num = data_y.shape[0]
-    labels = np.unique(data_y)
-    class_num = labels.shape[0]
-    labels = range(class_num)
+    num_samples = y.shape[0]
+    labels = np.unique(y)
+    num_classes = labels.shape[0]
+    labels = range(num_classes)
 
     # Get one-hot-encoded label tensors
-    vecs = np.zeros((sample_num, class_num), dtype=np.float32)
-    for i in range(class_num):
-        vecs[data_y == labels[i], i] = 1
+    vecs = np.zeros((num_samples, num_classes), dtype=np.float32)
+    for i in range(num_classes):
+        vecs[y == labels[i], i] = 1
 
     return torch.LongTensor(vecs)
 
 
-class CustomDataset(Dataset):
-    def __init__(self, file_path, tokenizer, w2v, max_len, pad_id):
-        if w2v is None:
-            with open(file_path, 'r', encoding='utf-8') as f:
-                lines = f.readlines()
-        else:
-            with open(file_path, 'r', encoding='ISO-8859-1') as f:
-                lines = f.readlines()
-
-        print(f"Processing {file_path}...")
-        self.x, self.y, self.lens, self.class_dict = processing(lines, tokenizer, w2v, max_len, pad_id)
-
-        self.one_hot_label = encode_label(self.y)
-
-        classes = [k for k, v in self.class_dict.items()]
-        self.label_idxs, self.label_lens = process_label(classes, tokenizer, w2v, pad_id)
-
-    def __len__(self):
-        return self.x.shape[0]
-
-    def __getitem__(self, idx):
-        return self.x[idx], self.y[idx], self.lens[idx], self.one_hot_label[idx]
-
-
 def load_w2v(file_path):
     # Load w2v model in case of using w2v_capsnet
-
-    w2v = KeyedVectors.load_word2vec_format(
-        file_path, binary=False, encoding='ISO-8859-1'
-    )
+    w2v = KeyedVectors.load_word2vec_format(file_path, binary=True)
 
     return w2v
 
 
-def read_datasets(data_path, model_type):
-    # Read datasets and give the data dictionary containing essential data objects for training.
-
-    data = {}
+def split_data(from_data_dir, to_data_dir, args):
+    train_lines = []
+    valid_lines = []
     
-    train_data_path = f"{data_path}/train.txt"
-    test_data_path = f"{data_path}/test.txt"
+    file_list = [file for file in os.listdir(from_data_dir) if file.endswith('.txt')]
+    for file in tqdm(file_list):
+        with open(f"{from_data_dir}/{file}", 'r') as f:
+            lines = f.readlines()
+        
+        random.seed(args.seed)
+        random.shuffle(lines)
+        train_lines += lines[:int(len(lines)*args.train_frac)]
+        valid_lines += lines[int(len(lines)*args.train_frac):]
+        
+    print(f"The size of train set: {len(train_lines)}")
+    print(f"The size of valid set: {len(valid_lines)}")
+    
+    train_data_path = f"{to_data_dir}/{args.train_prefix}.txt"
+    valid_data_path = f"{to_data_dir}/{args.valid_prefix}.txt"
+    with open(train_data_path, 'w') as f:
+        for line in tqdm(train_lines):
+            f.write(f"{line.strip()}\n")
+    with open(valid_data_path, 'w') as f:
+        for line in tqdm(valid_lines):
+            f.write(f"{line.strip()}\n")
+            
+    return train_data_path, valid_data_path
 
-    # Load tokenizer and set max length of sentences.
+
+def read_datasets(from_data_dir, to_data_dir, args):
+    # Read datasets and make the data dictionary containing essential data objects for training.
+    print("Splitting raw data and saving into txt files...") 
+    train_data_path, valid_data_path = split_data(from_data_dir, to_data_dir, args)
+
+    # Setting configurations.
     tokenizer = None
     w2v = None
     bert_config = None
-    max_len = 50
-    if model_type == 'bert_capsnet' or model_type == 'basic_capsnet':
-        print("Loading KoBertTokenizer...")
-        tokenizer = get_tokenizer()
-        if model_type == 'bert_capsnet':
-            bert_config = get_distilkobert_model().config
-            max_len = bert_config.max_position_embeddings
-
+    if args.model_type == 'bert_capsnet' or args.model_type == 'basic_capsnet':
+        print("Loading BertTokenizer...")
+        tokenizer = BertTokenizer.from_pretrained("bert-base-uncased")
+        if args.model_type == 'bert_capsnet':
+            bert_config = BertConfig.from_pretrained("bert-base-uncased")
+            args.max_len = min(args.max_len, bert_config.max_position_embeddings)
     else:
-        w2v_path = f'{data_path}/cc.ko.300.vec'
-        if not os.path.isfile(w2v_path):
-            print("There is no Korean w2v file.")
-            print(f"Please download w2v file from https://dl.fbaipublicfiles.com/fasttext/vectors-crawl/cc.ko.300.bin.gz,"
-                  f" extract it and put it in {data_path}.")
-            exit()
+        w2v_path = f'{data_dir}/GoogleNews-vectors-negative300.bin'
+        assert os.path.isfile(w2v_path), f"There is no Korean w2v file. Please download w2v file from https://drive.google.com/file/d/0B7XkCwpI5KDYNlNUTTlSS21pQmM/edit, extract it and put it in {args.data_dir}."
+  
         w2v = load_w2v(w2v_path)
 
     # Keep the index of padding.
     if tokenizer is None:
-        pad_id = 0
+        args.pad_id = 0
     else:
-        pad_id = tokenizer.token2idx['[PAD]']
+        args.pad_id = tokenizer.get_vocab()['[PAD]']
 
     # Preprocess train/test data
     print("Preprocessing train/test data...")
-    train_set = CustomDataset(train_data_path, tokenizer, w2v, max_len, pad_id)
-    test_set = CustomDataset(test_data_path, tokenizer, w2v, max_len, pad_id)
-    data['train_set'] = train_set
-    data['test_set'] = test_set
-
-    # These are train/test custom dataset object.
-    data['train_class_dict'] = train_set.class_dict
-    data['test_class_dict'] = test_set.class_dict
-
-    # These are tensors containing tokenized label words.
-    data['train_label_idxs'] = train_set.label_idxs
-    data['test_label_idxs'] = test_set.label_idxs
-
-    # These are lengths of labels.
-    data['train_label_lens'] = train_set.label_lens
-    data['test_label_lens'] = test_set.label_lens
-
-    data['max_len'] = max_len
-    data['pad_id'] = pad_id
+    train_set = CustomDataset(train_data_path, tokenizer, w2v, args.max_len, args.pad_id)
+    valid_set = CustomDataset(valid_data_path, tokenizer, w2v, args.max_len, args.pad_id)
 
     # Depending the model type, vocab_size, word_emb_size, and w2v object can be different.
-    if model_type == 'bert_capsnet':
-        data['vocab_size'] = len(tokenizer.token2idx)
-        data['word_emb_size'] = bert_config.dim
-        data['embedding'] = None
-    elif model_type == 'basic_capsnet':
-        data['vocab_size'] = len(tokenizer.token2idx)
-        data['word_emb_size'] = 300
-        data['embedding'] = None
-    elif model_type == 'w2v_capsnet':
+    if args.model_type == 'bert_capsnet':
+        args.vocab_size = len(tokenizer.get_vocab())
+        args.word_emb_size = bert_config.hidden_size
+        args.embedding = None
+    elif args.model_type == 'basic_capsnet':
+        args.vocab_size = len(tokenizer.get_vocab())
+        args.word_emb_size = 300
+        args.embedding = None
+    elif args.model_type == 'w2v_capsnet':
         w2v_shape = w2v.wv.vectors.shape
-        data['vocab_size'] = w2v_shape[0]
-        data['word_emb_size'] = w2v_shape[1]
-        data['embedding'] = tool.norm_matrix(w2v.syn0)
+        args.vocab_size = w2v_shape[0]
+        args.word_emb_size = w2v_shape[1]
+        args.embedding = tool.norm_matrix(w2v.syn0)
 
-    return data
+    return train_set, valid_set, args
