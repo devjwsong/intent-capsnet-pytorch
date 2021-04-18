@@ -1,4 +1,4 @@
-# intent-capsnet-kor-pytorch
+# intent-capsnet-pytorch
 This repository is Pytorch implementation of **"Zero-shot User Intent Detection via Capsule Neural Networks"**.
 
 Details of this model is available in the original paper, "*Zero-shot user intent detection via capsule neural networks*"[[1]](#1).
