@@ -55,29 +55,29 @@ Each `txt` file represents one intent and each line in a file consists of intent
 
 | argument                  | type    | description                                                  | default          |
 | ------------------------- | ------- | ------------------------------------------------------------ | ---------------- |
-| `--seed`                  | `int`   | The random seed.                                             | `0`              |
-| `--batch_size`            | `int`   | The batch size.                                              | `16`             |
-| `--learning_rate`         | `float` | The learning rate.                                           | `1e-4`           |
-| `--num_epochs`            | `int`   | The total number of epochs.                                  | `10`             |
-| `--max_len`               | `int`   | The maximum input length.                                    | `128`            |
-| `--dropout`               | `float` | The dropout rate.                                            | `0.0`            |
-| `--d_a`                   | `int`   | The dimension size of an internal vector during self-attention. | `80`             |
-| `--num_props`             | `int`   | The number of properties in each capsule.                    | `10`             |
-| `--r`                     | `int`   | The number of semantic features                              | `3`              |
-| `--num_iters`             | `int`   | The number of iterations for the dynamic routing algorithm.  | `1`              |
-| `--alpha`                 | `float` | The coefficient value for encouraging the discrepancies among different attention heads in the loss function. | `1e-4`           |
-| `--sim_scale`             | `int`   | The scaling factor for intent similarity.                    | `1`              |
-| `--num_layers`            | `int`   | The number of layers for an LSTM encoder.                    | `1`              |
-| `--ckpt_dir`              | `str`   | The directory for trained ckpts.                             | `"saved_models"` |
-| `--data_dir`              | `str`   | The directory for data.                                      | `"data"`         |
-| `--raw_dir`               | `str`   | The directory for raw data.                                  | `"raw"`          |
-| `--train_frac`            | `float` | The ratio of the conversations to be included in the train set. | `0.8`            |
-| `--train_prefix`          | `str`   | The train data file name's prefix.                           | `"train"`        |
-| `--valid_prefix`          | `str`   | The validation data file name's prefix.                      | `"valid"`        |
-| `--model_type`            | `str`   | The model type. (`"bert_capsnet"`, `"basic_capsnet"`, `"w2v_capsnet"`) | `"bert_capsnet"` |
-| `--mode`                  | `str`   | Seen class or zero shot? (`"seen_class"`, `"zero_shot"`)     | `"seen_class"`   |
-| `--bert_embedding_frozen` | `str`   | Do you want to freeze BERT's embedding layer or not? (`"True"`, `"False"`) | `"False"`        |
-| `--gpu`                   | `str`   | The index of gpu to use.                                     | `"0"`            |
+| `seed`                  | `int`   | The random seed.                                             | `0`              |
+| `batch_size`            | `int`   | The batch size.                                              | `16`             |
+| `learning_rate`         | `float` | The learning rate.                                           | `1e-4`           |
+| `num_epochs`            | `int`   | The total number of epochs.                                  | `10`             |
+| `max_len`               | `int`   | The maximum input length.                                    | `128`            |
+| `dropout`               | `float` | The dropout rate.                                            | `0.0`            |
+| `d_a`                   | `int`   | The dimension size of an internal vector during self-attention. | `80`             |
+| `num_props`             | `int`   | The number of properties in each capsule.                    | `10`             |
+| `r`                     | `int`   | The number of semantic features                              | `3`              |
+| `num_iters`             | `int`   | The number of iterations for the dynamic routing algorithm.  | `1`              |
+| `alpha`                 | `float` | The coefficient value for encouraging the discrepancies among different attention heads in the loss function. | `1e-4`           |
+| `sim_scale`             | `int`   | The scaling factor for intent similarity.                    | `1`              |
+| `num_layers`            | `int`   | The number of layers for an LSTM encoder.                    | `1`              |
+| `ckpt_dir`              | `str`   | The directory for trained ckpts.                             | `"saved_models"` |
+| `data_dir`              | `str`   | The directory for data.                                      | `"data"`         |
+| `raw_dir`               | `str`   | The directory for raw data.                                  | `"raw"`          |
+| `train_frac`            | `float` | The ratio of the conversations to be included in the train set. | `0.8`            |
+| `train_prefix`          | `str`   | The train data file name's prefix.                           | `"train"`        |
+| `valid_prefix`          | `str`   | The validation data file name's prefix.                      | `"valid"`        |
+| `model_type`            | `str`   | The model type. (`"bert_capsnet"`, `"basic_capsnet"`, `"w2v_capsnet"`) | `"bert_capsnet"` |
+| `mode`                  | `str`   | Seen class or zero shot? (`"seen_class"`, `"zero_shot"`)     | `"seen_class"`   |
+| `bert_embedding_frozen` | `str`   | Do you want to freeze BERT's embedding layer or not? (`"True"`, `"False"`) | `"False"`        |
+| `gpu`                   | `str`   | The index of gpu to use.                                     | `"0"`            |
 
 <br/>
 
